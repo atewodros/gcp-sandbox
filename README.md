@@ -162,3 +162,46 @@ gcloud -v
 - Analyze Big Data with BigQuery: https://cloud.google.com/bigquery/docs/quickstarts
 - Manage MySQL databases with Cloud SQL: https://cloud.google.com/sql/docs/mysql/quickstart
 - Get started with Cloud DNS: https://cloud.google.com/dns/docs/quickstart
+
+
+
+## Terraform CLI & Tutorials
+
+### Command-line tools and documentation
+- Terraform CLI documentation: https://developer.hashicorp.com/terraform/cli
+- Terraform language documentation (HCL, resources, expressions): https://developer.hashicorp.com/terraform/language
+- Terraform providers (including Google): https://registry.terraform.io/
+- Google provider docs: https://registry.terraform.io/providers/hashicorp/google/latest/docs
+
+### Helpful Terraform commands (quick reference)
+```powershell
+# Initialize (and download/update providers/modules)
+terraform init
+terraform init -upgrade
+
+# Format and validate
+terraform fmt -recursive
+terraform validate
+
+# Plan and apply
+terraform plan
+terraform plan -out=tfplan
+terraform apply tfplan
+
+# Destroy resources
+terraform destroy
+
+# Inspect state
+terraform state list
+terraform state show <address>
+
+# Useful troubleshooting
+terraform providers
+terraform version
+```
+
+### Tutorials to get started
+- Terraform on Google Cloud (HashiCorp learn): https://developer.hashicorp.com/terraform/tutorials/gcp-get-started
+- Terraform Google provider examples: https://registry.terraform.io/providers/hashicorp/google/latest/docs/guides/getting_started
+- Terraform best practices (HashiCorp): https://developer.hashicorp.com/terraform/tutorials/cli
+

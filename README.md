@@ -1,3 +1,14 @@
+# GCP Multi-Env Platform (Terraform) — Best-Practice Layout
+
+This repo uses a **bootstrap + environments + modules** structure:
+
+- `infra/bootstrap/` — one-time setup (projects, APIs, state buckets, GitHub OIDC/WIF)
+- `infra/environments/<env>/` — environment stacks (sandbox/stag/prod), each with its own backend/state
+- `infra/modules/` — reusable modules (network, gke, artifact registry, cloud run, iam, github_wif)
+
+The rest of the repo contains GitHub Actions workflows and a sample Cloud Run app (`app/`).
+
+---
 # GCP Sandbox Platform (Terraform) — sandbox / stag / prod
 
 This repo includes:

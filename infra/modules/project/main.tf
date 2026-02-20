@@ -1,11 +1,29 @@
-variable "env" { type = string }
-variable "project_id" { type = string }
-variable "project_name" { type = string }
-variable "billing_account_id" { type = string }
-variable "org_id" { type = string, default = null }
-variable "folder_id" { type = string, default = null }
-variable "services" { type = list(string) }
-variable "state_bucket_region" { type = string }
+variable "env" {
+  type = string
+}
+variable "project_id" {
+  type = string
+}
+variable "project_name" {
+  type = string
+}
+variable "billing_account_id" {
+  type = string
+}
+variable "org_id" {
+  type = string
+  default = null
+}
+variable "folder_id" {
+  type = string
+  default = null
+}
+variable "services" {
+  type = list(string)
+}
+variable "state_bucket_region" {
+  type = string
+}
 
 resource "google_project" "p" {
   project_id      = var.project_id

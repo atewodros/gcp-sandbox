@@ -5,7 +5,8 @@ on:
   push:
     branches: ["main"]
     paths:
-      - "gcp-infra/**"
+      - "infra/**"
+      - ".github/workflows/terraform.yml"
 
 permissions:
   id-token: write
@@ -21,7 +22,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: gcp-infra/envs/${{ matrix.env }}
+        working-directory: infra/environments/${{ matrix.env }}
 
     steps:
       - uses: actions/checkout@v4

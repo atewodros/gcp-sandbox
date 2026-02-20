@@ -1,6 +1,12 @@
-variable "project_id" { type = string }
-variable "region"     { type = string }
-variable "env"        { type = string }
+variable "project_id" {
+  type = string
+}
+variable "region" {
+  type = string
+}
+variable "env" {
+  type = string
+}
 
 resource "google_artifact_registry_repository" "repo" {
   project       = var.project_id

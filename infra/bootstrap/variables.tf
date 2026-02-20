@@ -26,5 +26,9 @@ variable "region" {
   default = "us-east1"
 }
 
-variable "github_owner" { type = string }
-variable "github_repo"  { type = string }
+variable "github_owner" {
+  type = string
+}
+variable "github_repo" {
+  type = string
+}

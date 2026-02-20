@@ -1,7 +1,15 @@
-variable "project_id" { type = string }
-variable "region"     { type = string }
-variable "env"        { type = string }
-variable "cidr"       { type = string }
+variable "project_id" {
+  type = string
+}
+variable "region" {
+  type = string
+}
+variable "env" {
+  type = string
+}
+variable "cidr" {
+  type = string
+}
 
 resource "google_compute_network" "vpc" {
   project                 = var.project_id

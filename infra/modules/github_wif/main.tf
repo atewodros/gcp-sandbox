@@ -1,7 +1,15 @@
-variable "project_id" { type = string }
-variable "env" { type = string }
-variable "github_owner" { type = string }
-variable "github_repo" { type = string }
+variable "project_id" {
+  type = string
+}
+variable "env" {
+  type = string
+}
+variable "github_owner" {
+  type = string
+}
+variable "github_repo" {
+  type = string
+}
 
 data "google_project" "p" { project_id = var.project_id }
 

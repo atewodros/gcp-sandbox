@@ -1,0 +1,48 @@
+name: terraform
+
+on:
+  pull_request:
+  push:
+    branches: ["main"]
+    paths:
+      - "gcp-infra/**"
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+jobs:
+  tf:
+    strategy:
+      matrix:
+        env: [sandbox, stag, prod]
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: gcp-infra/envs/${{ matrix.env }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.7.5"
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER_${{ matrix.env }} }}
+          service_account: ${{ secrets.GCP_TF_SA_${{ matrix.env }} }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - run: terraform init -input=false
+      - run: terraform fmt -check -recursive
+      - run: terraform validate
+      - run: terraform plan -input=false -no-color
+
+      - name: Apply (main branch only)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: terraform apply -input=false -auto-approve

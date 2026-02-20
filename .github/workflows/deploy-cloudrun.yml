@@ -1,0 +1,45 @@
+name: deploy-cloudrun
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "app/**"
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy-stag:
+    runs-on: ubuntu-latest
+    env:
+      ENV: stag
+      REGION: us-east1
+      SERVICE: hello
+      PROJECT_ID: ${{ secrets.GCP_PROJECT_ID_STAG }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER_stag }}
+          service_account: ${{ secrets.GCP_TF_SA_stag }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker auth
+        run: gcloud auth configure-docker $REGION-docker.pkg.dev --quiet
+
+      - name: Build & Push
+        run: |
+          IMAGE="$REGION-docker.pkg.dev/$PROJECT_ID/${ENV}-docker/${SERVICE}:${GITHUB_SHA}"
+          docker build -t "$IMAGE" ./app
+          docker push "$IMAGE"
+          echo "IMAGE=$IMAGE" >> $GITHUB_ENV
+
+      - name: Deploy Cloud Run
+        run: |
+          gcloud run deploy "${ENV}-${SERVICE}"             --image "$IMAGE"             --region "$REGION"             --project "$PROJECT_ID"             --platform managed             --allow-unauthenticated

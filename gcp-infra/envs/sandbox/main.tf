@@ -1,0 +1,49 @@
+terraform {
+  required_version = ">= 1.6, < 2.0"
+  required_providers {
+    google = { source = "hashicorp/google", version = "~> 5.0" }
+  }
+}
+
+provider "google" {
+  project = var.project_id
+  region  = var.region
+}
+
+locals {
+  cidr = var.env == "prod" ? "10.30.0.0/24" : (var.env == "stag" ? "10.20.0.0/24" : "10.10.0.0/24")
+}
+
+module "network" {
+  source     = "../../modules/network"
+  project_id = var.project_id
+  region     = var.region
+  env        = var.env
+  cidr       = local.cidr
+}
+
+module "gke" {
+  source     = "../../modules/gke"
+  project_id = var.project_id
+  region     = var.region
+  env        = var.env
+  network    = module.network.network_self_link
+  subnetwork = module.network.subnet_self_link
+}
+
+module "ar" {
+  source     = "../../modules/artifact_registry"
+  project_id = var.project_id
+  region     = var.region
+  env        = var.env
+}
+
+module "cloud_run" {
+  source       = "../../modules/cloud_run"
+  project_id   = var.project_id
+  region       = var.region
+  env          = var.env
+  service_name = "hello"
+  image        = var.cloud_run_image
+  public       = true
+}

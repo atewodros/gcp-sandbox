@@ -103,3 +103,45 @@ Create:
 
 After this, pushing to main will run Terraform automatically.
 
+
+## Install or upgrade Terraform + Google Cloud SDK (PowerShell)
+
+### Chocolatey (recommended)
+Run **PowerShell as Administrator**.
+
+Install or upgrade Terraform (latest available in Chocolatey):
+```powershell
+choco upgrade terraform -y
+terraform -v
+```
+
+Install or upgrade Google Cloud SDK (gcloud) (Chocolatey package name is `gcloudsdk`):
+```powershell
+choco upgrade gcloudsdk -y
+gcloud -v
+```
+
+First-time GCP auth for Terraform (ADC):
+```powershell
+gcloud init
+gcloud auth application-default login
+```
+
+### Pin Terraform to a specific version (optional)
+If you want a fixed Terraform version (recommended for reproducible builds):
+```powershell
+# List versions available in Chocolatey
+choco list terraform --all
+
+# Install/upgrade a specific version (example)
+choco upgrade terraform --version=1.7.5 -y
+
+# Prevent accidental upgrades
+choco pin add -n=terraform
+```
+
+### If Chocolatey can’t find gcloudsdk: use Winget fallback
+```powershell
+winget install -e --id Google.CloudSDK
+gcloud -v
+```

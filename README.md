@@ -205,3 +205,81 @@ terraform version
 - Terraform Google provider examples: https://registry.terraform.io/providers/hashicorp/google/latest/docs/guides/getting_started
 - Terraform best practices (HashiCorp): https://developer.hashicorp.com/terraform/tutorials/cli
 
+
+
+## How to Find Your Billing Account ID, Org ID, or Folder ID
+
+These values are required for the **bootstrap** step when creating new GCP projects.
+
+### Find Billing Account ID
+
+#### Option 1: Using Google Cloud Console
+1. Go to: https://console.cloud.google.com/billing
+2. Select your billing account.
+3. The **Billing Account ID** appears at the top (format: `000000-000000-000000`).
+
+#### Option 2: Using gcloud CLI
+```powershell
+gcloud billing accounts list
+```
+The output will show:
+```
+ACCOUNT_ID            NAME                OPEN
+000000-000000-000000  My Billing Account  True
+```
+
+Use the `ACCOUNT_ID` value.
+
+---
+
+### Find Organization ID
+
+#### Option 1: Using gcloud CLI
+```powershell
+gcloud organizations list
+```
+Output example:
+```
+DISPLAY_NAME        ID
+example.com         123456789012
+```
+
+Use the numeric `ID` value as your `org_id`.
+
+#### Option 2: Using Console
+Go to:
+https://console.cloud.google.com/iam-admin/settings
+
+The Organization ID appears at the top of the page.
+
+---
+
+### Find Folder ID (if using folders instead of org root)
+
+#### Using gcloud CLI
+```powershell
+gcloud resource-manager folders list
+```
+Example output:
+```
+DISPLAY_NAME     ID
+Dev Folder       345678901234
+```
+
+Use the numeric `ID` value as your `folder_id`.
+
+---
+
+### Which one should you use?
+
+- If your company uses an **Organization**, use `org_id`.
+- If projects must be created inside a **specific folder**, use `folder_id` instead.
+- You only need **one**: either `org_id` OR `folder_id`.
+
+Example in `terraform.tfvars`:
+
+```hcl
+billing_account_id = "000000-000000-000000"
+org_id             = "123456789012"
+# folder_id        = "345678901234"
+```

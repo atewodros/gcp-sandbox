@@ -145,3 +145,20 @@ choco pin add -n=terraform
 winget install -e --id Google.CloudSDK
 gcloud -v
 ```
+
+
+
+## Google Cloud CLI & Tutorials
+
+### Command-line tools and client libraries
+- Learn more about Google Cloud CLI commands: https://cloud.google.com/sdk/gcloud
+- Accessing services with the gcloud CLI: https://cloud.google.com/sdk/docs
+- Client Libraries Explained: https://cloud.google.com/apis/docs/client-libraries-explained
+
+### Tutorials to get started
+- Build and deploy a web service to Cloud Run: https://cloud.google.com/run/docs/quickstarts
+- Launch large compute clusters on Compute Engine: https://cloud.google.com/compute/docs/quickstarts
+- Store data on Cloud Storage: https://cloud.google.com/storage/docs/quickstart-gcloud
+- Analyze Big Data with BigQuery: https://cloud.google.com/bigquery/docs/quickstarts
+- Manage MySQL databases with Cloud SQL: https://cloud.google.com/sql/docs/mysql/quickstart
+- Get started with Cloud DNS: https://cloud.google.com/dns/docs/quickstart

@@ -1,0 +1,14 @@
+* text=auto
+
+# Terraform
+*.tf text eol=lf
+*.tfvars text eol=lf
+
+# Shell / CI
+*.yml text eol=lf
+*.yaml text eol=lf
+*.sh text eol=lf
+
+# Docker / Python
+Dockerfile text eol=lf
+*.py text eol=lf

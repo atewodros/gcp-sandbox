@@ -52,3 +52,54 @@ After `bootstrap` apply, set these secrets in GitHub:
 ## Notes
 - `envs/*/backend.tf` contains placeholder bucket names — update them after bootstrap.
 - Cloud Run is set to **public** (allUsers invoker) per your preference.
+
+
+## Push this template to GitHub (Windows / PowerShell)
+After downloading and extracting the zip:
+
+```powershell
+cd C:\src\gcp-sandbox
+git init
+git add .
+git commit -m "Initial Terraform multi-env platform (bootstrap + GKE + Cloud Run + AR + GitHub OIDC)"
+git branch -M main
+git remote add origin https://github.com/atewodros/gcp-sandbox.git
+git push -u origin main
+```
+
+## After running bootstrap → configure GitHub Secrets
+
+Run bootstrap first:
+
+```powershell
+cd gcp-infra\bootstrap
+terraform init
+terraform apply
+```
+
+Terraform will output a map called **env** that contains:
+- project IDs
+- Terraform state bucket names
+- Workload Identity Provider strings
+- Terraform deployer service account emails
+
+### Update Terraform backends
+Replace bucket names in:
+- gcp-infra/envs/sandbox/backend.tf
+- gcp-infra/envs/stag/backend.tf
+- gcp-infra/envs/prod/backend.tf
+
+### Add GitHub Repository Secrets
+GitHub → Repo → Settings → Secrets → Actions
+
+Create:
+- GCP_WIF_PROVIDER_sandbox
+- GCP_TF_SA_sandbox
+- GCP_WIF_PROVIDER_stag
+- GCP_TF_SA_stag
+- GCP_WIF_PROVIDER_prod
+- GCP_TF_SA_prod
+- GCP_PROJECT_ID_STAG = atewodros-stag
+
+After this, pushing to main will run Terraform automatically.
+

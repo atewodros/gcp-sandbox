@@ -14,8 +14,11 @@ permissions:
   pull-requests: write
 
 jobs:
+
   sandbox:
+    name: Sandbox
     runs-on: ubuntu-latest
+
     defaults:
       run:
         working-directory: infra/environments/sandbox
@@ -30,8 +33,8 @@ jobs:
       - id: auth
         uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER_sandbox }}
-          service_account: ${{ secrets.GCP_TF_SA_sandbox }}
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER_SANDBOX }}
+          service_account: ${{ secrets.GCP_TF_SA_SANDBOX }}
 
       - uses: google-github-actions/setup-gcloud@v2
 
@@ -40,13 +43,16 @@ jobs:
       - run: terraform validate
       - run: terraform plan -input=false -no-color
 
-      - name: Apply (main branch only)
+      - name: Apply (main only)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: terraform apply -input=false -auto-approve
 
+
   stag:
+    name: Staging
     runs-on: ubuntu-latest
     needs: sandbox
+
     defaults:
       run:
         working-directory: infra/environments/stag
@@ -61,8 +67,8 @@ jobs:
       - id: auth
         uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER_stag }}
-          service_account: ${{ secrets.GCP_TF_SA_stag }}
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER_STAG }}
+          service_account: ${{ secrets.GCP_TF_SA_STAG }}
 
       - uses: google-github-actions/setup-gcloud@v2
 
@@ -71,13 +77,16 @@ jobs:
       - run: terraform validate
       - run: terraform plan -input=false -no-color
 
-      - name: Apply (main branch only)
+      - name: Apply (main only)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: terraform apply -input=false -auto-approve
 
+
   prod:
+    name: Production
     runs-on: ubuntu-latest
     needs: stag
+
     defaults:
       run:
         working-directory: infra/environments/prod
@@ -92,8 +101,8 @@ jobs:
       - id: auth
         uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER_prod }}
-          service_account: ${{ secrets.GCP_TF_SA_prod }}
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER_PROD }}
+          service_account: ${{ secrets.GCP_TF_SA_PROD }}
 
       - uses: google-github-actions/setup-gcloud@v2
 
@@ -102,6 +111,6 @@ jobs:
       - run: terraform validate
       - run: terraform plan -input=false -no-color
 
-      - name: Apply (main branch only)
+      - name: Apply (main only)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: terraform apply -input=false -auto-approve

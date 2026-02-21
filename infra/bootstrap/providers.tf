@@ -1,3 +1,4 @@
 provider "google" {
-  # Uses your local gcloud Application Default Credentials (ADC)
+  # Uses your local gcloud ADC for bootstrap
 }
+

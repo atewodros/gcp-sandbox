@@ -33,18 +33,18 @@ resource "google_container_cluster" "cluster" {
 }
 
 resource "google_container_node_pool" "primary" {
-  project   = var.project_id
-  name      = "${var.env}-primary"
-  location  = var.region
-  cluster   = google_container_cluster.cluster.name
+  project    = var.project_id
+  name       = "${var.env}-primary"
+  location   = var.region
+  cluster    = google_container_cluster.cluster.name
   node_count = var.env == "prod" ? 2 : 1
 
   node_config {
     machine_type = var.env == "prod" ? "e2-standard-4" : "e2-standard-2"
     oauth_scopes = ["https://www.googleapis.com/auth/cloud-platform"]
-    labels = { env = var.env, managed = "terraform" }
+    labels       = { env = var.env, managed = "terraform" }
   }
 }
 
 output "cluster_name" { value = google_container_cluster.cluster.name }
-output "location"     { value = var.region }
+output "location" { value = var.region }

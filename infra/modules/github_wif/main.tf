@@ -11,12 +11,12 @@ variable "github_repo" {
   type = string
 }
 
-data "google_project" "p" { project_id = var.project_id }
+#data "google_project" "p" { project_id = var.project_id }
 
 resource "google_iam_workload_identity_pool" "pool" {
   project                   = var.project_id
-  workload_identity_pool_id  = "github-${var.env}"
-  display_name               = "GitHub OIDC (${var.env})"
+  workload_identity_pool_id = "github-${var.env}"
+  display_name              = "GitHub OIDC (${var.env})"
 }
 
 resource "google_iam_workload_identity_pool_provider" "provider" {
@@ -45,11 +45,19 @@ resource "google_service_account" "tf_deployer" {
 resource "google_service_account_iam_member" "wif" {
   service_account_id = google_service_account.tf_deployer.name
   role               = "roles/iam.workloadIdentityUser"
-  member = "principalSet://iam.googleapis.com/projects/${data.google_project.p.number}/locations/global/workloadIdentityPools/${google_iam_workload_identity_pool.pool.workload_identity_pool_id}/attribute.repository/${var.github_owner}/${var.github_repo}"
+
+  # IMPORTANT: use pool NAME (not manually constructed path)
+  member = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.pool.name}/attribute.repository/${var.github_owner}/${var.github_repo}"
+
+  # IMPORTANT: force ordering so pool + provider exist first
+  depends_on = [
+    google_iam_workload_identity_pool.pool,
+    google_iam_workload_identity_pool_provider.provider
+  ]
 }
 
 output "workload_identity_provider" {
-  value = "projects/${data.google_project.p.number}/locations/global/workloadIdentityPools/${google_iam_workload_identity_pool.pool.workload_identity_pool_id}/providers/${google_iam_workload_identity_pool_provider.provider.workload_identity_pool_provider_id}"
+  value = "projects/${var.project_id}/locations/global/workloadIdentityPools/${google_iam_workload_identity_pool.pool.workload_identity_pool_id}/providers/${google_iam_workload_identity_pool_provider.provider.workload_identity_pool_provider_id}"
 }
 
 output "tf_deployer_email" { value = google_service_account.tf_deployer.email }

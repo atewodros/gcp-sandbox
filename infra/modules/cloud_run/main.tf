@@ -14,7 +14,7 @@ variable "image" {
   type = string
 }
 variable "public" {
-  type = bool
+  type    = bool
   default = false
 }
 

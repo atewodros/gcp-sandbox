@@ -11,11 +11,11 @@ variable "billing_account_id" {
   type = string
 }
 variable "org_id" {
-  type = string
+  type    = string
   default = null
 }
 variable "folder_id" {
-  type = string
+  type    = string
   default = null
 }
 variable "services" {
@@ -43,6 +43,7 @@ resource "google_project_service" "svc" {
 
 resource "google_storage_bucket" "tf_state" {
   name                        = "${var.project_id}-tfstate"
+  project                     = google_project.p.project_id
   location                    = var.state_bucket_region
   uniform_bucket_level_access = true
   versioning { enabled = true }
@@ -53,5 +54,5 @@ resource "google_storage_bucket" "tf_state" {
   }
 }
 
-output "project_id"      { value = google_project.p.project_id }
+output "project_id" { value = google_project.p.project_id }
 output "tf_state_bucket" { value = google_storage_bucket.tf_state.name }

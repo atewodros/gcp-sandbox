@@ -294,3 +294,62 @@ billing_account_id = "000000-000000-000000"
 org_id             = "123456789012"
 # folder_id        = "345678901234"
 ```
+
+
+---
+# GitHub CLI & CI/CD (Workload Identity Federation)
+
+## Install GitHub CLI (Windows PowerShell)
+```powershell
+choco install gh -y
+gh auth login
+```
+
+## Push Terraform bootstrap outputs to GitHub Secrets
+```powershell
+cd infra\bootstrap
+terraform output -json env > env.json
+$repo = "atewodros/gcp-sandbox"
+$envs = Get-Content .\env.json | ConvertFrom-Json
+
+gh secret set GCP_WIF_PROVIDER_sandbox --repo $repo --body $envs.sandbox.wif_provider
+gh secret set GCP_TF_SA_sandbox       --repo $repo --body $envs.sandbox.tf_deployer_sa_email
+gh secret set GCP_WIF_PROVIDER_stag   --repo $repo --body $envs.stag.wif_provider
+gh secret set GCP_TF_SA_stag          --repo $repo --body $envs.stag.tf_deployer_sa_email
+gh secret set GCP_WIF_PROVIDER_prod   --repo $repo --body $envs.prod.wif_provider
+gh secret set GCP_TF_SA_prod          --repo $repo --body $envs.prod.tf_deployer_sa_email
+gh secret set GCP_PROJECT_ID_STAG     --repo $repo --body "atewodros-stag"
+```
+
+Verify:
+```powershell
+gh secret list --repo atewodros/gcp-sandbox
+```
+
+---
+# Workload Identity Federation Troubleshooting
+
+Correct provider format:
+```
+projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/github-ENV/providers/github
+```
+
+Check providers:
+```powershell
+gcloud iam workload-identity-pools providers list --project atewodros-stag --location=global --workload-identity-pool=github-stag
+```
+
+---
+# Windows Authentication Fix (ADC Path)
+
+```powershell
+gcloud auth application-default login
+$env:GOOGLE_APPLICATION_CREDENTIALS="<ADC_PATH>"
+```
+
+---
+# Git Line Endings (Windows)
+
+```powershell
+git config --global core.autocrlf true
+```

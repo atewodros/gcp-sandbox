@@ -9,7 +9,7 @@ variable "env" {
 }
 
 variable "cloud_run_image" {
-  type    = string
+  type = string
   # Updated by CI/CD deploy; placeholder for initial apply
   default = "us-east1-docker.pkg.dev/placeholder/placeholder/hello:latest"
 }

@@ -1,3 +1,15 @@
+terraform {
+  required_version = ">= 1.6, < 2.0"
+  required_providers {
+    google = { source = "hashicorp/google", version = "~> 5.0" }
+  }
+}
+
+provider "google" {
+  project = var.project_id
+  region  = var.region
+}
+
 locals {
   cidr = var.env == "prod" ? "10.30.0.0/24" : (var.env == "stag" ? "10.20.0.0/24" : "10.10.0.0/24")
 }

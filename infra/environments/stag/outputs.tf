@@ -11,5 +11,6 @@ output "gke_cluster_name" {
 }
 
 output "gke_location" {
-  value = module.gke.location
+  value = module.gke.cluster_location
 }
+

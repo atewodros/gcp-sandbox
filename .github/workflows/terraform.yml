@@ -14,11 +14,9 @@ permissions:
   pull-requests: write
 
 jobs:
-
   sandbox:
     name: Sandbox
     runs-on: ubuntu-latest
-
     defaults:
       run:
         working-directory: infra/environments/sandbox
@@ -41,18 +39,16 @@ jobs:
       - run: terraform init -input=false
       - run: terraform fmt -check -recursive
       - run: terraform validate
-      - run: terraform plan -input=false -no-color
+      - run: terraform plan -input=false -no-color -var-file=terraform.tfvars
 
       - name: Apply (main only)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: terraform apply -input=false -auto-approve
-
+        run: terraform apply -input=false -auto-approve -var-file=terraform.tfvars
 
   stag:
     name: Staging
     runs-on: ubuntu-latest
     needs: sandbox
-
     defaults:
       run:
         working-directory: infra/environments/stag
@@ -75,18 +71,16 @@ jobs:
       - run: terraform init -input=false
       - run: terraform fmt -check -recursive
       - run: terraform validate
-      - run: terraform plan -input=false -no-color
+      - run: terraform plan -input=false -no-color -var-file=terraform.tfvars
 
       - name: Apply (main only)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: terraform apply -input=false -auto-approve
-
+        run: terraform apply -input=false -auto-approve -var-file=terraform.tfvars
 
   prod:
     name: Production
     runs-on: ubuntu-latest
     needs: stag
-
     defaults:
       run:
         working-directory: infra/environments/prod
@@ -109,8 +103,8 @@ jobs:
       - run: terraform init -input=false
       - run: terraform fmt -check -recursive
       - run: terraform validate
-      - run: terraform plan -input=false -no-color
+      - run: terraform plan -input=false -no-color -var-file=terraform.tfvars
 
       - name: Apply (main only)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: terraform apply -input=false -auto-approve
+        run: terraform apply -input=false -auto-approve -var-file=terraform.tfvars

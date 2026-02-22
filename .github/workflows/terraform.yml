@@ -14,12 +14,19 @@ permissions:
   pull-requests: write
 
 jobs:
+
   sandbox:
     name: Sandbox
     runs-on: ubuntu-latest
+
     defaults:
       run:
         working-directory: infra/environments/sandbox
+
+    env:
+      TF_VAR_project_id: atewodros-sandbox
+      TF_VAR_region: us-east1
+      TF_VAR_env: sandbox
 
     steps:
       - uses: actions/checkout@v4
@@ -39,19 +46,26 @@ jobs:
       - run: terraform init -input=false
       - run: terraform fmt -check -recursive
       - run: terraform validate
-      - run: terraform plan -input=false -no-color -var-file=terraform.tfvars
+      - run: terraform plan -input=false -no-color
 
       - name: Apply (main only)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: terraform apply -input=false -auto-approve -var-file=terraform.tfvars
+        run: terraform apply -input=false -auto-approve
+
 
   stag:
     name: Staging
     runs-on: ubuntu-latest
     needs: sandbox
+
     defaults:
       run:
         working-directory: infra/environments/stag
+
+    env:
+      TF_VAR_project_id: atewodros-stag
+      TF_VAR_region: us-east1
+      TF_VAR_env: stag
 
     steps:
       - uses: actions/checkout@v4
@@ -71,19 +85,26 @@ jobs:
       - run: terraform init -input=false
       - run: terraform fmt -check -recursive
       - run: terraform validate
-      - run: terraform plan -input=false -no-color -var-file=terraform.tfvars
+      - run: terraform plan -input=false -no-color
 
       - name: Apply (main only)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: terraform apply -input=false -auto-approve -var-file=terraform.tfvars
+        run: terraform apply -input=false -auto-approve
+
 
   prod:
     name: Production
     runs-on: ubuntu-latest
     needs: stag
+
     defaults:
       run:
         working-directory: infra/environments/prod
+
+    env:
+      TF_VAR_project_id: atewodros-prod
+      TF_VAR_region: us-east1
+      TF_VAR_env: prod
 
     steps:
       - uses: actions/checkout@v4
@@ -103,8 +124,8 @@ jobs:
       - run: terraform init -input=false
       - run: terraform fmt -check -recursive
       - run: terraform validate
-      - run: terraform plan -input=false -no-color -var-file=terraform.tfvars
+      - run: terraform plan -input=false -no-color
 
       - name: Apply (main only)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: terraform apply -input=false -auto-approve -var-file=terraform.tfvars
+        run: terraform apply -input=false -auto-approve

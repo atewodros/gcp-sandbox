@@ -13,3 +13,7 @@ variable "cloud_run_image" {
   # Updated by CI/CD deploy; placeholder for initial apply
   default = "us-east1-docker.pkg.dev/placeholder/placeholder/hello:latest"
 }
+variable "zone" {
+  type        = string
+  description = "Single zone for zonal GKE cluster (e.g., us-east1-b)"
+}

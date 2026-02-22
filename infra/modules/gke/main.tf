@@ -19,9 +19,10 @@ variable "subnetwork" {
 }
 
 resource "google_container_cluster" "cluster" {
-  project  = var.project_id
-  name     = "${var.env}-gke"
-  location = var.region
+  project             = var.project_id
+  name                = "${var.env}-gke"
+  location            = var.region
+  deletion_protection = false # ✅ add this
 
   network    = var.network
   subnetwork = var.subnetwork

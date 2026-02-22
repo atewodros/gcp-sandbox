@@ -353,3 +353,149 @@ $env:GOOGLE_APPLICATION_CREDENTIALS="<ADC_PATH>"
 ```powershell
 git config --global core.autocrlf true
 ```
+
+
+
+# GCP Sandbox – Terraform + GKE + Cloud Run + CI/CD
+
+This repository provisions a multi-environment Google Cloud setup using Terraform.
+
+Environments:
+- sandbox
+- stag
+- prod
+
+Region:
+- us-east1
+
+---
+
+# Architecture Overview
+
+Each environment provisions:
+
+- VPC + Subnet
+- GKE Cluster (Standard)
+- Dedicated Node Pool (30GB pd-standard)
+- Cloud Run Service
+- Artifact Registry (Docker)
+- IAM + Service Accounts
+- GitHub Workload Identity Federation (OIDC)
+- Remote Terraform state (GCS)
+
+---
+
+# Estimated Monthly Cost (Per Environment)
+
+Main cost drivers:
+
+| Resource | Estimated Monthly |
+|-----------|-------------------|
+| GKE Cluster Fee ($0.10/hr) | ~$73 |
+| 1x e2-medium Node | ~$25–40 |
+| 30GB pd-standard Disk | ~$1–2 |
+| Cloud Run | ~$0 (low traffic) |
+| Artifact Registry | Minimal (depends on stored images) |
+
+Estimated total per environment: ~$100–120/month
+
+Running sandbox + stag + prod ≈ ~$300–360/month.
+
+To see exact billing:
+Billing → Reports → Filter by project.
+
+---
+
+# How to Check What Exists
+
+## Terraform State
+terraform state list
+
+## All GCP Resources
+gcloud asset search-all-resources --scope=projects/atewodros-sandbox
+
+## GKE
+gcloud container clusters list --project atewodros-sandbox
+gcloud container node-pools list --cluster sandbox-gke --region us-east1 --project atewodros-sandbox
+
+## Cloud Run
+gcloud run services list --region us-east1 --project atewodros-sandbox
+
+---
+
+# Common Issues & Fixes
+
+## 1. Artifact Registry API 403
+Enable API:
+gcloud services enable artifactregistry.googleapis.com --project atewodros-sandbox
+
+## 2. GKE SSD Quota Exceeded
+Fix:
+- remove_default_node_pool = true
+- disk_type = "pd-standard"
+- disk_size_gb = 30
+
+If cluster is corrupted:
+gcloud container clusters delete sandbox-gke --region us-east1 --project atewodros-sandbox
+
+Then:
+terraform state rm module.gke.google_container_cluster.cluster
+terraform apply
+
+## 3. Node Pool Already Exists
+terraform state rm module.gke.google_container_node_pool.default
+terraform import module.gke.google_container_node_pool.default projects/atewodros-sandbox/locations/us-east1/clusters/sandbox-gke/nodePools/default-pool
+
+---
+
+# GitHub Actions CI/CD
+
+Workflow order:
+- sandbox
+- stag (runs only if sandbox succeeds)
+- prod (runs only if stag succeeds)
+
+Push → runs sandbox only.
+Manual dispatch → runs full promotion chain.
+
+Required Secrets:
+
+GCP_WIF_PROVIDER_SANDBOX
+GCP_TF_SA_SANDBOX
+GCP_WIF_PROVIDER_STAG
+GCP_TF_SA_STAG
+GCP_WIF_PROVIDER_PROD
+GCP_TF_SA_PROD
+TF_VAR_cloud_run_image_SANDBOX
+TF_VAR_cloud_run_image_STAG
+TF_VAR_cloud_run_image_PROD
+
+Set via CLI:
+
+gh secret set TF_VAR_cloud_run_image_SANDBOX --body "us-docker.pkg.dev/cloudrun/container/hello:latest"
+
+---
+
+# Cleanup (Stop Spending)
+
+To delete sandbox environment:
+
+terraform destroy -auto-approve
+
+Or delete cluster only:
+
+gcloud container clusters delete sandbox-gke --region us-east1 --project atewodros-sandbox
+
+---
+
+# Best Practices
+
+- Use remote backend (GCS)
+- Use Workload Identity Federation (no service account keys)
+- Use TF_VAR secrets in GitHub
+- Separate environments
+- Keep sandbox minimal to control cost
+
+---
+
+You now have a production-style multi-env Terraform + GCP pipeline.

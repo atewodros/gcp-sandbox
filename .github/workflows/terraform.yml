@@ -2,11 +2,23 @@ name: terraform
 
 on:
   pull_request:
+    paths:
+      - "infra/**"
+      - ".github/workflows/terraform.yml"
   push:
     branches: ["main"]
     paths:
       - "infra/**"
       - ".github/workflows/terraform.yml"
+  workflow_dispatch:
+    inputs:
+      promote:
+        description: "Choose environment to APPLY (manual promotion)"
+        required: true
+        type: choice
+        options:
+          - stag
+          - prod
 
 permissions:
   id-token: write
@@ -14,13 +26,13 @@ permissions:
   pull-requests: write
 
 jobs:
-
   # =========================
-  # SANDBOX
+  # SANDBOX (always runs on PR; runs on push and applies)
   # =========================
   sandbox:
     name: Sandbox
     runs-on: ubuntu-latest
+    environment: sandbox
 
     defaults:
       run:
@@ -39,7 +51,8 @@ jobs:
         with:
           terraform_version: "1.7.5"
 
-      - uses: google-github-actions/auth@v2
+      - name: Auth (sandbox)
+        uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER_SANDBOX }}
           service_account: ${{ secrets.GCP_TF_SA_SANDBOX }}
@@ -57,13 +70,16 @@ jobs:
 
 
   # =========================
-  # STAGING (PR only)
+  # STAG (PR plan only OR manual promotion apply)
+  # - On PR: plan only
+  # - On workflow_dispatch promote=stag|prod: apply (and is required before prod)
   # =========================
   stag:
-    name: Staging (PR only)
+    name: Staging
     runs-on: ubuntu-latest
     needs: sandbox
-    if: github.event_name == 'pull_request'
+    environment: stag
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
 
     defaults:
       run:
@@ -82,7 +98,8 @@ jobs:
         with:
           terraform_version: "1.7.5"
 
-      - uses: google-github-actions/auth@v2
+      - name: Auth (stag)
+        uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER_STAG }}
           service_account: ${{ secrets.GCP_TF_SA_STAG }}
@@ -94,15 +111,23 @@ jobs:
       - run: terraform validate
       - run: terraform plan -input=false -no-color
 
+      - name: Apply (manual promotion only)
+        if: github.event_name == 'workflow_dispatch' && (inputs.promote == 'stag' || inputs.promote == 'prod')
+        run: terraform apply -input=false -auto-approve
+
 
   # =========================
-  # PROD (PR only)
+  # PROD (PR plan only OR manual promotion apply with approval)
+  # - On PR: plan only
+  # - On workflow_dispatch promote=prod: apply AFTER stag apply
+  #   (Approval happens because environment: prod has required reviewers)
   # =========================
   prod:
-    name: Production (PR only)
+    name: Production
     runs-on: ubuntu-latest
     needs: stag
-    if: github.event_name == 'pull_request'
+    environment: prod
+    if: github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && inputs.promote == 'prod')
 
     defaults:
       run:
@@ -121,7 +146,8 @@ jobs:
         with:
           terraform_version: "1.7.5"
 
-      - uses: google-github-actions/auth@v2
+      - name: Auth (prod)
+        uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER_PROD }}
           service_account: ${{ secrets.GCP_TF_SA_PROD }}
@@ -132,3 +158,7 @@ jobs:
       - run: terraform fmt -check -recursive
       - run: terraform validate
       - run: terraform plan -input=false -no-color
+
+      - name: Apply (manual promotion only, requires approval)
+        if: github.event_name == 'workflow_dispatch' && inputs.promote == 'prod'
+        run: terraform apply -input=false -auto-approve

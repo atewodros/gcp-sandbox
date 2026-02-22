@@ -15,6 +15,9 @@ permissions:
 
 jobs:
 
+  # =========================
+  # SANDBOX
+  # =========================
   sandbox:
     name: Sandbox
     runs-on: ubuntu-latest
@@ -27,6 +30,7 @@ jobs:
       TF_VAR_project_id: atewodros-sandbox
       TF_VAR_region: us-east1
       TF_VAR_env: sandbox
+      TF_VAR_cloud_run_image: ${{ secrets.TF_VAR_cloud_run_image_SANDBOX }}
 
     steps:
       - uses: actions/checkout@v4
@@ -35,8 +39,7 @@ jobs:
         with:
           terraform_version: "1.7.5"
 
-      - id: auth
-        uses: google-github-actions/auth@v2
+      - uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER_SANDBOX }}
           service_account: ${{ secrets.GCP_TF_SA_SANDBOX }}
@@ -48,15 +51,19 @@ jobs:
       - run: terraform validate
       - run: terraform plan -input=false -no-color
 
-      - name: Apply (main only)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      - name: Apply (push to main only)
+        if: github.event_name == 'push'
         run: terraform apply -input=false -auto-approve
 
 
+  # =========================
+  # STAGING (PR only)
+  # =========================
   stag:
-    name: Staging
+    name: Staging (PR only)
     runs-on: ubuntu-latest
     needs: sandbox
+    if: github.event_name == 'pull_request'
 
     defaults:
       run:
@@ -66,6 +73,7 @@ jobs:
       TF_VAR_project_id: atewodros-stag
       TF_VAR_region: us-east1
       TF_VAR_env: stag
+      TF_VAR_cloud_run_image: ${{ secrets.TF_VAR_cloud_run_image_STAG }}
 
     steps:
       - uses: actions/checkout@v4
@@ -74,8 +82,7 @@ jobs:
         with:
           terraform_version: "1.7.5"
 
-      - id: auth
-        uses: google-github-actions/auth@v2
+      - uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER_STAG }}
           service_account: ${{ secrets.GCP_TF_SA_STAG }}
@@ -87,15 +94,15 @@ jobs:
       - run: terraform validate
       - run: terraform plan -input=false -no-color
 
-      - name: Apply (main only)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: terraform apply -input=false -auto-approve
 
-
+  # =========================
+  # PROD (PR only)
+  # =========================
   prod:
-    name: Production
+    name: Production (PR only)
     runs-on: ubuntu-latest
     needs: stag
+    if: github.event_name == 'pull_request'
 
     defaults:
       run:
@@ -105,6 +112,7 @@ jobs:
       TF_VAR_project_id: atewodros-prod
       TF_VAR_region: us-east1
       TF_VAR_env: prod
+      TF_VAR_cloud_run_image: ${{ secrets.TF_VAR_cloud_run_image_PROD }}
 
     steps:
       - uses: actions/checkout@v4
@@ -113,8 +121,7 @@ jobs:
         with:
           terraform_version: "1.7.5"
 
-      - id: auth
-        uses: google-github-actions/auth@v2
+      - uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER_PROD }}
           service_account: ${{ secrets.GCP_TF_SA_PROD }}
@@ -125,7 +132,3 @@ jobs:
       - run: terraform fmt -check -recursive
       - run: terraform validate
       - run: terraform plan -input=false -no-color
-
-      - name: Apply (main only)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: terraform apply -input=false -auto-approve

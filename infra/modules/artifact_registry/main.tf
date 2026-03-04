@@ -16,7 +16,7 @@ resource "google_artifact_registry_repository" "repo" {
   repository_id = "${var.env}-docker"
   format        = "DOCKER"
   description   = "Docker images for ${var.env}"
-  labels = var.labels
+  labels        = var.labels
 }
 
 output "repo_url" {

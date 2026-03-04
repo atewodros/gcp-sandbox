@@ -3,7 +3,7 @@ locals {
 }
 
 module "labels" {
-  source  = "../../modules/labels"
+  source = "../../modules/labels"
 
   project = "gcp-sandbox"
   env     = var.env

@@ -34,10 +34,10 @@ variable "labels" {
   type = map(string)
 }
 resource "google_container_cluster" "cluster" {
-  project  = var.project_id
-  name     = "${var.env}-gke"
-  location = var.zone
-  resource_labels = var.labels
+  project             = var.project_id
+  name                = "${var.env}-gke"
+  location            = var.zone
+  resource_labels     = var.labels
   deletion_protection = false
 
   network    = var.network
@@ -56,7 +56,7 @@ resource "google_container_node_pool" "default" {
   cluster  = google_container_cluster.cluster.name
 
   node_count = var.num_nodes
-  
+
   node_config {
     machine_type = "e2-medium"
     disk_type    = "pd-standard"

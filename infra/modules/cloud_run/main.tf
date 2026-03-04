@@ -22,7 +22,9 @@ variable "public" {
   type    = bool
   default = false
 }
-
+variable "labels" {
+  type = map(string)
+}
 # Ensure required APIs are enabled in the target project.
 # This avoids failures like:
 # "Artifact Registry API has not been used... or it is disabled"
@@ -56,7 +58,7 @@ resource "google_cloud_run_v2_service" "svc" {
   project  = var.project_id
   location = var.region
   name     = "${var.env}-${var.service_name}"
-
+  labels   = var.labels
   template {
     service_account = google_service_account.runtime.email
 

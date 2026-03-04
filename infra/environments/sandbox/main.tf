@@ -16,6 +16,8 @@ module "network" {
   region     = var.region
   env        = var.env
   cidr       = local.cidr
+
+  labels = module.labels.labels
 }
 
 module "gke" {
@@ -26,6 +28,8 @@ module "gke" {
   env        = var.env
   network    = module.network.network_self_link
   subnetwork = module.network.subnet_self_link
+
+  labels = module.labels.labels
 }
 
 module "ar" {
@@ -33,6 +37,8 @@ module "ar" {
   project_id = var.project_id
   region     = var.region
   env        = var.env
+
+  labels = module.labels.labels
 }
 
 module "cloud_run" {
@@ -43,4 +49,6 @@ module "cloud_run" {
   service_name = "hello"
   image        = var.cloud_run_image
   public       = true
+
+  labels = module.labels.labels
 }

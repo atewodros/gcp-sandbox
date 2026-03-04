@@ -16,8 +16,6 @@ module "network" {
   region     = var.region
   env        = var.env
   cidr       = local.cidr
-
-  labels = module.labels.labels
 }
 
 module "gke" {

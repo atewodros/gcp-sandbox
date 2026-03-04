@@ -10,14 +10,12 @@ variable "env" {
 variable "cidr" {
   type = string
 }
-variable "labels" {
-  type = map(string)
-}
+
 resource "google_compute_network" "vpc" {
   project                 = var.project_id
   name                    = "${var.env}-vpc"
   auto_create_subnetworks = false
-  labels                  = var.labels
+
 }
 
 resource "google_compute_subnetwork" "subnet" {

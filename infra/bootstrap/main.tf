@@ -46,4 +46,15 @@ module "projects" {
   services           = local.services
 
   state_bucket_region = var.region
+
+}
+
+module "wif" {
+  for_each = local.envs
+  source   = "../modules/github_wif"
+
+  project_id   = module.projects[each.key].project_id
+  env          = each.key
+  github_owner = var.github_owner
+  github_repo  = var.github_repo
 }

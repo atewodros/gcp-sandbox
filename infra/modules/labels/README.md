@@ -1,164 +1,198 @@
-# Enterprise Labels Module (GCP + Terraform)
+# gcp_ml_labels
 
-This module generates a **GCP label-compliant** map using a recommended “enterprise” label set.
-
-It includes **Terraform variable validations** to enforce:
-- allowed environments
-- allowed compliance/data-classification values
-- GCP label naming rules (lowercase, 63 chars max, `a-z0-9_-`)
-
-## Recommended Enterprise Label Set
-
-| Key | Purpose | Example |
-|---|---|---|
-| `environment` | environment grouping | `sandbox` / `stag` / `prod` |
-| `project` | logical project grouping | `gcp-sandbox` |
-| `owner` | owning team/person | `atewodros` |
-| `team` | engineering team | `devops` |
-| `service` | app/service name | `hello` |
-| `cost_center` | billing grouping | `engineering` |
-| `compliance` | regulatory classification | `none` / `pci` / `hipaa` / `sox` / `gdpr` |
-| `data_classification` | sensitivity | `public` / `internal` / `restricted` |
-| `managed_by` | IaC tool | `terraform` |
-
-## Files
-
-- `variables.tf` – inputs + validation rules
-- `main.tf` – `locals` that build the labels map
-- `outputs.tf` – `labels` output
-- `versions.tf` – requires Terraform >= 1.6
+Enforces the mandatory GCP label taxonomy for ML resources.
 
 ---
 
-## Usage
+## Mandatory taxonomy
 
-### Basic
-```hcl
-module "labels" {
-  source  = "../../modules/labels"
+| Key        | Allowed values |
+|------------|----------------|
+| team       | trust-safety, recommendations |
+| model      | curated allowlist (default: wasp, bumble-dna) |
+| env        | dev, staging, prod |
+| managed-by | mlops-platform |
 
-  project = "gcp-sandbox"
-  env     = var.env
-  owner   = "atewodros"
+---
 
-  team    = "devops"
-  service = "platform"
-}
+## Module Structure
+
 ```
-
-### Add extra labels
-```hcl
-module "labels" {
-  source  = "../../modules/labels"
-  project = "gcp-sandbox"
-  env     = var.env
-  owner   = "atewodros"
-
-  extra_labels = {
-    repo = "gcp-sandbox"
-  }
-}
+modules/gcp_ml_labels/
+  ├── versions.tf
+  ├── variables.tf
+  ├── main.tf
+  ├── outputs.tf
+  └── README.md
 ```
 
 ---
 
-## Apply labels in common cases
-
-### Case A: Provider `default_labels` (recommended)
-This automatically labels **most** supported resources.
+## versions.tf
 
 ```hcl
-provider "google" {
-  project = var.project_id
-  region  = var.region
+terraform {
+  required_version = ">= 1.5.0"
 
-  default_labels = module.labels.labels
-}
-```
-
-> Note: Some resources use different fields or don’t support labels; see “Manual fields” below.
-
----
-
-### Case B: Resource supports `labels`
-Examples include Cloud Run, Artifact Registry, subnets, storage buckets, etc.
-
-```hcl
-resource "google_cloud_run_v2_service" "svc" {
-  project  = var.project_id
-  location = var.region
-  name     = "${var.env}-hello"
-
-  labels = module.labels.labels
-
-  template {
-    containers {
-      image = var.image
+  required_providers {
+    google = {
+      source  = "hashicorp/google"
+      version = ">= 5.0.0"
     }
   }
 }
+
 ```
 
 ---
 
-## Manual fields (important)
+## variables.tf
 
-Some resources require **non-standard label fields** or special placement:
-
-### 1) GKE Cluster: `resource_labels`
 ```hcl
-resource "google_container_cluster" "cluster" {
-  project  = var.project_id
-  name     = "${var.env}-gke"
-  location = var.zone
+variable "team" {
+  description = "Owning team for the resource."
+  type        = string
 
-  resource_labels = module.labels.labels
-}
-```
-
-### 2) GKE Node Pool: `node_config.labels`
-```hcl
-resource "google_container_node_pool" "default" {
-  project  = var.project_id
-  cluster  = google_container_cluster.cluster.name
-  location = var.zone
-  name     = "default-pool"
-
-  node_config {
-    labels = module.labels.labels
+  validation {
+    condition     = contains(["trust-safety", "recommendations"], var.team)
+    error_message = "team must be one of: trust-safety, recommendations."
   }
 }
+
+variable "model" {
+  description = "Model identifier (curated allowlist)."
+  type        = string
+
+  validation {
+    condition     = length(var.model) > 0
+    error_message = "model must be a non-empty string."
+  }
+}
+
+variable "env" {
+  description = "Deployment environment."
+  type        = string
+
+  validation {
+    condition     = contains(["dev", "staging", "prod"], var.env)
+    error_message = "env must be one of: dev, staging, prod."
+  }
+}
+
+variable "managed_by" {
+  description = "Enforced constant to indicate platform ownership."
+  type        = string
+  default     = "mlops-platform"
+
+  validation {
+    condition     = var.managed_by == "mlops-platform"
+    error_message = "managed_by must be exactly: mlops-platform."
+  }
+}
+
+variable "allowed_models" {
+  description = "Allowlist of approved model label values. Extend via PR."
+  type        = set(string)
+  default     = ["wasp", "bumble-dna"]
+}
+
+variable "extra_labels" {
+  description = "Optional additional labels (mandatory labels always win)."
+  type        = map(string)
+  default     = {}
+}
+
 ```
 
-### 3) Project labels: `google_project.labels`
-If the project already exists, **import it first**.
-```hcl
-resource "google_project" "this" {
-  project_id = var.project_id
-  name       = var.project_id
+---
 
+## main.tf
+
+```hcl
+locals {
+  reserved_keys = toset(["team", "model", "env", "managed-by", "managed_by"])
+
+  mandatory_labels = {
+    team       = var.team
+    model      = var.model
+    env        = var.env
+    managed-by = var.managed_by
+  }
+
+  extra_label_keys        = toset(keys(var.extra_labels))
+  reserved_keys_in_extras = setintersection(local.extra_label_keys, local.reserved_keys)
+  extras_do_not_override  = length(local.reserved_keys_in_extras) == 0
+
+  model_allowed = contains(var.allowed_models, var.model)
+
+  labels = merge(var.extra_labels, local.mandatory_labels)
+}
+
+resource "terraform_data" "label_guard" {
+  input = local.labels
+
+  lifecycle {
+    precondition {
+      condition     = local.model_allowed
+      error_message = "model must be one of allowed_models."
+    }
+
+    precondition {
+      condition     = local.extras_do_not_override
+      error_message = "extra_labels must not include reserved keys."
+    }
+  }
+}
+
+```
+
+---
+
+## outputs.tf
+
+```hcl
+output "labels" {
+  description = "Merged labels map to apply to all resources."
+  value       = local.labels
+}
+
+output "mandatory_labels" {
+  description = "Only the mandatory labels."
+  value       = local.mandatory_labels
+}
+
+```
+
+---
+
+## Usage Example at resource level
+
+```hcl
+module "labels" {
+  source = "./modules/gcp_ml_labels"
+
+  team  = "trust-safety"
+  model = "wasp"
+  env   = "prod"
+
+  extra_labels = {
+    cost-center = "ml"
+    component   = "feature-store"
+  }
+}
+
+resource "google_storage_bucket" "artifacts" {
+  name   = "ml-artifacts-prod"
   labels = module.labels.labels
 }
 ```
 
-Import example:
-```bash
-terraform import google_project.this atewodros-sandbox
-```
-
 ---
 
-## Resources that do NOT support labels
-Some resources (example: `google_compute_network` VPC) do not support a `labels` argument.
-Terraform will fail if you try to set labels where unsupported.
 
----
+## Guarantees
 
-## Validation behavior
-If you pass invalid values (example: `env = "dev"`), Terraform will fail during `validate/plan` with a clear error message.
-
----
-
-## Outputs
-- `module.labels.labels` – map(string) to apply to resources
-- `module.labels.required_keys` – list of recommended keys
+- Fails if team/env invalid  
+- Fails if model not in allowlist  
+- Fails if extra_labels override reserved keys  
+- Ensures managed-by = mlops-platform

@@ -3,11 +3,16 @@ locals {
 }
 
 module "labels" {
-  source = "../../modules/labels"
+  source = "./modules/gcp_ml_labels"
 
-  project = "gcp-sandbox"
-  env     = var.env
-  owner   = "atewodros"
+  team  = "trust-safety"
+  model = "wasp"
+  env   = "prod"
+
+  extra_labels = {
+    cost-center = "ml"
+    component   = "feature-store"
+  }
 }
 
 module "network" {

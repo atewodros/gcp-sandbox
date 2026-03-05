@@ -19,6 +19,7 @@ on:
         options:
           - stag
           - prod
+          - sandbox
 
 permissions:
   id-token: write

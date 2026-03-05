@@ -44,7 +44,7 @@ module "cloud_run" {
   project_id   = var.project_id
   region       = var.region
   env          = var.env
-  service_name = "hello"
+  service_name = "helloWorld"
   image        = var.cloud_run_image
   public       = true
 

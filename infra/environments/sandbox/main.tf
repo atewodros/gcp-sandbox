@@ -3,7 +3,7 @@ locals {
 }
 
 module "labels" {
-  source = "./modules/gcp_ml_labels"
+  source = "./modules/labels"
 
   team  = "trust-safety"
   model = "wasp"

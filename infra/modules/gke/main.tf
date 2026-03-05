@@ -46,7 +46,7 @@ resource "google_container_cluster" "cluster" {
   # IMPORTANT:
   # Prevent GKE from creating the default node pool (which can trigger quota issues).
   remove_default_node_pool = true
-  initial_node_count       = 1
+  initial_node_count       = var.num_nodes
 }
 
 resource "google_container_node_pool" "default" {

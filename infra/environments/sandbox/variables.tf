@@ -17,3 +17,8 @@ variable "zone" {
   type        = string
   description = "Single zone for zonal GKE cluster (e.g., us-east1-b)"
 }
+variable "num_nodes" {
+  type        = number
+  description = "Number of nodes in the default node pool"
+  default     = 1
+}

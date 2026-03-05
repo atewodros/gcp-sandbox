@@ -26,7 +26,7 @@ module "gke" {
   env        = var.env
   network    = module.network.network_self_link
   subnetwork = module.network.subnet_self_link
-  num_nodes  =var.num_nodes
+  num_nodes  = var.num_nodes
 
   labels = module.labels.labels
 }

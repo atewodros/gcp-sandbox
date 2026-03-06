@@ -14,7 +14,7 @@ jobs:
   deploy-stag:
     runs-on: ubuntu-latest
     env:
-      ENV: stag
+      ENV: staging
       REGION: us-east1
       SERVICE: hello
       PROJECT_ID: ${{ secrets.GCP_PROJECT_ID_STAG }}

@@ -2,12 +2,18 @@ locals {
   cidr = var.env == "prod" ? "10.30.0.0/24" : (var.env == "stag" ? "10.20.0.0/24" : "10.10.0.0/24")
 }
 
+
 module "labels" {
   source = "../../modules/labels"
 
-  project = "gcp-sandbox"
-  env     = var.env
-  owner   = "atewodros"
+  team  = "trust-safety"
+  model = "wasp"
+  env   = var.env
+
+  extra_labels = {
+    cost-center = "ml"
+    component   = "feature-store"
+  }
 }
 
 module "network" {

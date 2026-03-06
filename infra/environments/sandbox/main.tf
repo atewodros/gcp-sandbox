@@ -4,15 +4,14 @@ locals {
 
 
 module "labels" {
-  source = "../../modules/labels"
+   source = "../../modules/labels"
 
-  team  = "trust-safety"
+  team  = "recommendations"
   model = "wasp"
-  env   = var.env
+  env   = "prod"
 
-  extra_labels = {
-    cost-center = "ml"
-    component   = "feature-store"
+  additional_labels = {
+    service = "recs-inference"
   }
 }
 
@@ -56,4 +55,15 @@ module "cloud_run" {
   public       = true
 
   labels = module.labels.labels
+}
+
+module "snowflake_secret" {
+  source = "../../modules/snowflake_json_secret"
+
+  project_id = var.project_id
+  region     = var.region
+
+  secret_prefix = "ml-prod-snowflake"
+
+  vertex_training_service_account_email = var.vertex_training_service_account_email
 }

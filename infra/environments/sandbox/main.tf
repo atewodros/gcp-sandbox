@@ -4,7 +4,7 @@ locals {
 
 
 module "labels" {
-   source = "../../modules/labels"
+  source = "../../modules/labels"
 
   team  = "recommendations"
   model = "wasp"

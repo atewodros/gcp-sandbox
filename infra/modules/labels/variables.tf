@@ -1,5 +1,5 @@
 variable "team" {
-  description = "Owning team for the resource."
+  description = "Owning ML team used for cost attribution and operational ownership."
   type        = string
 
   validation {
@@ -9,12 +9,17 @@ variable "team" {
 }
 
 variable "model" {
-  description = "Model identifier (curated allowlist)."
+  description = "Model identifier for cost tracking (controlled enum; extendable)."
   type        = string
 
   validation {
-    condition     = length(var.model) > 0
-    error_message = "model must be a non-empty string."
+    condition = contains([
+      "wasp",
+      "bumble-dna",
+      "shared",
+      "platform",
+    ], var.model)
+    error_message = "model must be one of: wasp, bumble-dna, shared, platform."
   }
 }
 
@@ -29,7 +34,7 @@ variable "env" {
 }
 
 variable "managed_by" {
-  description = "Enforced constant to indicate platform ownership."
+  description = "Ownership label indicating the managing platform/team."
   type        = string
   default     = "mlops-platform"
 
@@ -39,14 +44,22 @@ variable "managed_by" {
   }
 }
 
-variable "allowed_models" {
-  description = "Allowlist of approved model label values. Extend via PR."
-  type        = set(string)
-  default     = ["wasp", "bumble-dna"]
-}
-
-variable "extra_labels" {
-  description = "Optional additional labels (mandatory labels always win)."
+variable "additional_labels" {
+  description = "Optional additional labels to merge with the mandatory taxonomy."
   type        = map(string)
   default     = {}
+
+  validation {
+    condition = length(setintersection(
+      toset(keys(var.additional_labels)),
+      toset(["team", "model", "env", "managed-by"])
+    )) == 0
+    error_message = "additional_labels must not redefine mandatory keys."
+  }
+}
+
+variable "enforce_lowercase_values" {
+  description = "If true, validates that mandatory label values are lowercase."
+  type        = bool
+  default     = true
 }

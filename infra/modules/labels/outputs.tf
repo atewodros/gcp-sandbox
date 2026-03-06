@@ -1,19 +1,9 @@
 output "labels" {
-  description = "Merged label map (GCP label-compliant)."
+  description = "Merged labels map to apply to all resources."
   value       = local.labels
 }
 
-output "required_keys" {
-  description = "Recommended enterprise label keys."
-  value = [
-    "environment",
-    "project",
-    "owner",
-    "team",
-    "service",
-    "cost_center",
-    "compliance",
-    "data_classification",
-    "managed_by",
-  ]
+output "mandatory_labels" {
+  description = "Only the mandatory labels."
+  value       = local.mandatory_labels
 }

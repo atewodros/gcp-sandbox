@@ -57,13 +57,3 @@ module "cloud_run" {
   labels = module.labels.labels
 }
 
-module "snowflake_secret" {
-  source = "../../modules/snowflake_json_secret"
-
-  project_id = var.project_id
-  region     = var.region
-
-  secret_prefix = "ml-prod-snowflake"
-
-  vertex_training_service_account_email = var.vertex_training_service_account_email
-}

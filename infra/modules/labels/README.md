@@ -1,198 +1,71 @@
-# gcp_ml_labels
+# Module: labels
 
-Enforces the mandatory GCP label taxonomy for ML resources.
+Generates a standardized labels map (mandatory taxonomy) merged with optional additional labels for GCP resources.
 
----
+## Architecture / Overview
 
-## Mandatory taxonomy
+This module builds a mandatory labels taxonomy used for cost attribution and ownership, then merges it with any optional `additional_labels`. Mandatory keys are `team`, `model`, `env`, and `managed-by` (mapped from `managed_by`). The module validates lowercase values when `enforce_lowercase_values` is enabled and prevents `additional_labels` from redefining mandatory keys.
 
-| Key        | Allowed values |
-|------------|----------------|
-| team       | trust-safety, recommendations |
-| model      | curated allowlist (default: wasp, bumble-dna) |
-| env        | dev, staging, prod |
-| managed-by | mlops-platform |
+## Example Usage
 
----
+```hcl
+module "example" {
+  source = "../../modules/labels"
+
+  team    = "recommendations"
+  model   = "bumble-dna"
+  env     = "dev"
+
+  # optional
+  managed_by              = "mlops-platform"
+  additional_labels       = { owner = "alice" }
+  enforce_lowercase_values = true
+}
+```
+
+## Requirements
+
+| Name | Version |
+| ---- | ------- |
+| terraform | >= 1.5 |
+
+## Providers
+
+| Name | Version |
+| ---- | ------- |
+| google | >= 4.0 |
+
+## Inputs
+
+| Name | Description | Type | Default | Required |
+|------|-------------|:----:|:-------:|:--------:|
+| `team` | Owning ML team used for cost attribution and operational ownership. | string | — | yes |
+| `model` | Model identifier for cost tracking (controlled enum; extendable). | string | — | yes |
+| `env` | Deployment environment. | string | — | yes |
+| `managed_by` | Ownership label indicating the managing platform/team. | string | "mlops-platform" | no |
+| `additional_labels` | Optional additional labels to merge with the mandatory taxonomy. | map(string) | {} | no |
+| `enforce_lowercase_values` | If true, validates that mandatory label values are lowercase. | bool | true | no |
+
+## Outputs
+
+| Name | Description |
+|------|-------------|
+| `labels` | Merged labels map including mandatory taxonomy labels and any additional_labels. |
+| `mandatory_labels` | Mandatory taxonomy labels only. |
 
 ## Module Structure
 
-```
-modules/gcp_ml_labels/
-  ├── versions.tf
-  ├── variables.tf
-  ├── main.tf
-  ├── outputs.tf
-  └── README.md
-```
+modules/labels/
+├── main.tf
+├── variables.tf
+├── outputs.tf
+├── versions.tf
+└── README.md
 
----
+## Notes
 
-## versions.tf
+- Mandatory label keys: `team`, `model`, `env`, and `managed-by` (the variable is `managed_by`, but the label key is `managed-by`).
+- `additional_labels` must not redefine mandatory keys; this is validated by the module.
+- By default `enforce_lowercase_values = true`; set to `false` to disable lowercase validation for mandatory values.
+- `merged_labels` is produced by merging the mandatory taxonomy with `additional_labels`.
 
-```hcl
-terraform {
-  required_version = ">= 1.5.0"
-
-  required_providers {
-    google = {
-      source  = "hashicorp/google"
-      version = ">= 5.0.0"
-    }
-  }
-}
-
-```
-
----
-
-## variables.tf
-
-```hcl
-variable "team" {
-  description = "Owning team for the resource."
-  type        = string
-
-  validation {
-    condition     = contains(["trust-safety", "recommendations"], var.team)
-    error_message = "team must be one of: trust-safety, recommendations."
-  }
-}
-
-variable "model" {
-  description = "Model identifier (curated allowlist)."
-  type        = string
-
-  validation {
-    condition     = length(var.model) > 0
-    error_message = "model must be a non-empty string."
-  }
-}
-
-variable "env" {
-  description = "Deployment environment."
-  type        = string
-
-  validation {
-    condition     = contains(["dev", "staging", "prod"], var.env)
-    error_message = "env must be one of: dev, staging, prod."
-  }
-}
-
-variable "managed_by" {
-  description = "Enforced constant to indicate platform ownership."
-  type        = string
-  default     = "mlops-platform"
-
-  validation {
-    condition     = var.managed_by == "mlops-platform"
-    error_message = "managed_by must be exactly: mlops-platform."
-  }
-}
-
-variable "allowed_models" {
-  description = "Allowlist of approved model label values. Extend via PR."
-  type        = set(string)
-  default     = ["wasp", "bumble-dna"]
-}
-
-variable "extra_labels" {
-  description = "Optional additional labels (mandatory labels always win)."
-  type        = map(string)
-  default     = {}
-}
-
-```
-
----
-
-## main.tf
-
-```hcl
-locals {
-  reserved_keys = toset(["team", "model", "env", "managed-by", "managed_by"])
-
-  mandatory_labels = {
-    team       = var.team
-    model      = var.model
-    env        = var.env
-    managed-by = var.managed_by
-  }
-
-  extra_label_keys        = toset(keys(var.extra_labels))
-  reserved_keys_in_extras = setintersection(local.extra_label_keys, local.reserved_keys)
-  extras_do_not_override  = length(local.reserved_keys_in_extras) == 0
-
-  model_allowed = contains(var.allowed_models, var.model)
-
-  labels = merge(var.extra_labels, local.mandatory_labels)
-}
-
-resource "terraform_data" "label_guard" {
-  input = local.labels
-
-  lifecycle {
-    precondition {
-      condition     = local.model_allowed
-      error_message = "model must be one of allowed_models."
-    }
-
-    precondition {
-      condition     = local.extras_do_not_override
-      error_message = "extra_labels must not include reserved keys."
-    }
-  }
-}
-
-```
-
----
-
-## outputs.tf
-
-```hcl
-output "labels" {
-  description = "Merged labels map to apply to all resources."
-  value       = local.labels
-}
-
-output "mandatory_labels" {
-  description = "Only the mandatory labels."
-  value       = local.mandatory_labels
-}
-
-```
-
----
-
-## Usage Example at resource level
-
-```hcl
-module "labels" {
-  source = "./modules/gcp_ml_labels"
-
-  team  = "trust-safety"
-  model = "wasp"
-  env   = "prod"
-
-  extra_labels = {
-    cost-center = "ml"
-    component   = "feature-store"
-  }
-}
-
-resource "google_storage_bucket" "artifacts" {
-  name   = "ml-artifacts-prod"
-  labels = module.labels.labels
-}
-```
-
----
-
-
-## Guarantees
-
-- Fails if team/env invalid  
-- Fails if model not in allowlist  
-- Fails if extra_labels override reserved keys  
-- Ensures managed-by = mlops-platform

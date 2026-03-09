@@ -6,13 +6,12 @@ locals {
 module "labels" {
   source = "../../modules/labels"
 
-  team  = "trust-safety"
+  team  = "recommendations"
   model = "wasp"
-  env   = var.env
+  env   = "prod"
 
-  extra_labels = {
-    cost-center = "ml"
-    component   = "feature-store"
+  additional_labels = {
+    service = "recs-inference"
   }
 }
 
